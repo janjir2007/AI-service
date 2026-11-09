@@ -1,0 +1,742 @@
+{
+  "info": {
+    "name": "RCOS Norm AI",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Chat input/output tests. Small talk works without database or Ollama; road questions need Postgres + ingested books + Ollama."
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Health",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Documents",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/documents",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "documents"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Small talk (no DB needed)",
+      "item": [
+        {
+          "name": "Greeting - English",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('intent is greeting', () => pm.expect(pm.response.json().intent).to.eql('greeting'));",
+                  "pm.test('reply script is latin', () => pm.expect(pm.response.json().reply_script).to.eql('latin'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Hi\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/chat",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chat"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Greeting - Latin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('intent is greeting', () => pm.expect(pm.response.json().intent).to.eql('greeting'));",
+                  "pm.test('reply script is latin', () => pm.expect(pm.response.json().reply_script).to.eql('latin'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Sain bnu?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/chat",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chat"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Greeting - Cyrillic",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('intent is greeting', () => pm.expect(pm.response.json().intent).to.eql('greeting'));",
+                  "pm.test('reply script is cyrillic', () => pm.expect(pm.response.json().reply_script).to.eql('cyrillic'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Сайн байна уу\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/chat",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chat"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Greeting - morning Latin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('intent is greeting', () => pm.expect(pm.response.json().intent).to.eql('greeting'));",
+                  "pm.test('reply script is latin', () => pm.expect(pm.response.json().reply_script).to.eql('latin'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"ugluunii mend\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/chat",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chat"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Greeting - morning Cyrillic",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('intent is greeting', () => pm.expect(pm.response.json().intent).to.eql('greeting'));",
+                  "pm.test('reply script is cyrillic', () => pm.expect(pm.response.json().reply_script).to.eql('cyrillic'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Өглөөний мэнд\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/chat",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chat"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Who are you - Cyrillic",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('intent is identity', () => pm.expect(pm.response.json().intent).to.eql('identity'));",
+                  "pm.test('reply script is cyrillic', () => pm.expect(pm.response.json().reply_script).to.eql('cyrillic'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Чи хэн бэ?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/chat",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chat"
+              ]
+            }
+          }
+        },
+        {
+          "name": "What can you do - Latin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('intent is capabilities', () => pm.expect(pm.response.json().intent).to.eql('capabilities'));",
+                  "pm.test('reply script is latin', () => pm.expect(pm.response.json().reply_script).to.eql('latin'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"chi yu hiij chadah ve?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/chat",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chat"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Thanks - Latin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('intent is thanks', () => pm.expect(pm.response.json().intent).to.eql('thanks'));",
+                  "pm.test('reply script is latin', () => pm.expect(pm.response.json().reply_script).to.eql('latin'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"bayarlalaa\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/chat",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chat"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Bye - Cyrillic",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('intent is bye', () => pm.expect(pm.response.json().intent).to.eql('bye'));",
+                  "pm.test('reply script is cyrillic', () => pm.expect(pm.response.json().reply_script).to.eql('cyrillic'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Баяртай\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/chat",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chat"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Road questions (needs DB + Ollama)",
+      "item": [
+        {
+          "name": "Road - Cyrillic",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('intent is road', () => pm.expect(pm.response.json().intent).to.eql('road'));",
+                  "pm.test('reply script is cyrillic', () => pm.expect(pm.response.json().reply_script).to.eql('cyrillic'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"II ангиллын замын хөдөлгөөний зурвасын өргөн хэд вэ?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/chat",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chat"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Road - Latin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('intent is road', () => pm.expect(pm.response.json().intent).to.eql('road'));",
+                  "pm.test('reply script is latin', () => pm.expect(pm.response.json().reply_script).to.eql('latin'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"yavgan zamiin urgun hed ve\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/chat",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chat"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Road - mixed",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('intent is road', () => pm.expect(pm.response.json().intent).to.eql('road'));",
+                  "pm.test('reply script is cyrillic', () => pm.expect(pm.response.json().reply_script).to.eql('cyrillic'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Явган zamын өргөн hed ve?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/chat",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chat"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Greeting + road question",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('intent is road', () => pm.expect(pm.response.json().intent).to.eql('road'));",
+                  "pm.test('reply script is latin', () => pm.expect(pm.response.json().reply_script).to.eql('latin'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Sain bnu, yavgan zamiin urgun hed ve?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/chat",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chat"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Off-topic (needs DB)",
+      "item": [
+        {
+          "name": "Weather - Cyrillic",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('intent is off_topic', () => pm.expect(pm.response.json().intent).to.eql('off_topic'));",
+                  "pm.test('reply script is cyrillic', () => pm.expect(pm.response.json().reply_script).to.eql('cyrillic'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Маргааш цаг агаар ямар байх вэ?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/chat",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chat"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Poem - Latin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('intent is off_topic', () => pm.expect(pm.response.json().intent).to.eql('off_topic'));",
+                  "pm.test('reply script is latin', () => pm.expect(pm.response.json().reply_script).to.eql('latin'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"tegvel nadad goy shuleg bicheed ug\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/chat",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chat"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
