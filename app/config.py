@@ -32,6 +32,8 @@ class Settings(BaseSettings):
     llm_lead_chunk_chars: int = 3000
     llm_chunk_chars: int = 1500
     ollama_num_ctx: int = 8192
+    ollama_num_predict: int = 600
+    ollama_repeat_penalty: float = 1.1
     # Block LLM answers with numbers that are not in the context; no LLM call without relevant sources.
     answer_number_check: bool = True
     # Lower on 2GB VPS (e.g. 8) to reduce RAM during ingest; chunks flush to DB each batch.

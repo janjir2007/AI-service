@@ -17,14 +17,29 @@ class OllamaClient:
         self._chat_timeout = settings.ollama_chat_timeout
         self._embed_timeout = settings.ollama_embed_timeout
         self._num_ctx = settings.ollama_num_ctx
+        self._num_predict = settings.ollama_num_predict
+        self._repeat_penalty = settings.ollama_repeat_penalty
 
-    def chat(self, model: str, messages: list[dict[str, str]], temperature: float = 0.1) -> str:
+    def chat(
+        self,
+        model: str,
+        messages: list[dict[str, str]],
+        temperature: float = 0.1,
+        format: Any = None,
+    ) -> str:
         payload = {
             "model": model,
             "messages": messages,
             "stream": False,
-            "options": {"temperature": temperature, "num_predict": 1024, "num_ctx": self._num_ctx},
+            "options": {
+                "temperature": temperature,
+                "num_predict": self._num_predict,
+                "num_ctx": self._num_ctx,
+                "repeat_penalty": self._repeat_penalty,
+            },
         }
+        if format is not None:
+            payload["format"] = format
         data = self._post_json("/api/chat", payload, timeout=self._chat_timeout)
         # Durations from Ollama are in nanoseconds.
         logger.info(
@@ -38,6 +53,11 @@ class OllamaClient:
             data.get("eval_duration", 0) / 1e9,
             data.get("total_duration", 0) / 1e9,
         )
+        if data.get("eval_count") and data["eval_count"] >= self._num_predict:
+            logger.warning(
+                "Ollama answer hit num_predict=%s (cut off; possible repetition loop)",
+                self._num_predict,
+            )
         return data["message"]["content"].strip()
 
     def embed(self, model: str, inputs: list[str]) -> list[list[float]]:
