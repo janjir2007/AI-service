@@ -211,11 +211,9 @@ def _table_to_chunks(table, words: list[tuple], title: str, page_number: int) ->
         if ncols == 1:
             lines.append(r[0])
             continue
-        # One fact per line: a small model reading "row: col1 a; col2 b; col3 c" tends to take
-        # the first number, so each cell gets its own line with its row and column names.
-        for j in range(1, ncols):
-            if r[j]:
-                lines.append(f"{shown} — {headers[j]}: {r[j]}" if shown else f"{headers[j]}: {r[j]}")
+        parts = [f"{headers[j]}: {r[j]}" for j in range(1, ncols) if r[j]]
+        if parts:
+            lines.append(f"{shown} — " + "; ".join(parts) if shown else "; ".join(parts))
     if not lines:
         return []
 
