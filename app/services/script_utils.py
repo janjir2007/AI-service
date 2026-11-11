@@ -46,6 +46,7 @@ WORD_MAP: dict[str, str] = {
     "temdeg": "тэмдэг", "tsag": "цаг", "ajilchin": "ажилчин", "ajilchnii": "ажилчны",
     "geodez": "геодез", "geodeziin": "геодезийн", "tusuv": "төсөв", "tusviin": "төсвийн",
     "jishig": "жишиг", "gudamj": "гудамж", "zogsool": "зогсоол", "us": "ус",
+    "zogsoh": "зогсох", "uyiin": "үеийн", "uyin": "үеийн", "uzegdeh": "үзэгдэх", "zai": "зай",
     "zailuulah": "зайлуулах", "suuri": "суурь", "km": "км", "m": "м", "sm": "см",
 }
 

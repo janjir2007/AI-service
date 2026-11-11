@@ -7,6 +7,13 @@ from abc import ABC, abstractmethod
 import httpx
 
 from app.config import Settings, get_settings
+from app.services.facts_answer import (
+    FACTS_SCHEMA,
+    FACTS_SYSTEM_PROMPT,
+    OVERVIEW_SCHEMA,
+    OVERVIEW_SYSTEM_PROMPT,
+    facts_user_prompt,
+)
 from app.services.ollama_client import OllamaClient
 
 logger = logging.getLogger(__name__)
@@ -55,6 +62,12 @@ class LLMProvider(ABC):
     @abstractmethod
     def chat(self, message: str, context_blocks: list[dict]) -> str:
         raise NotImplementedError
+
+    def chat_facts(self, message: str, context_blocks: list[dict]) -> dict:
+        raise NotImplementedError("facts mode is only implemented for the Ollama provider")
+
+    def chat_overview(self, message: str, context_blocks: list[dict]) -> dict:
+        raise NotImplementedError("facts mode is only implemented for the Ollama provider")
 
 
 class OpenAILLMProvider(LLMProvider):
@@ -121,6 +134,22 @@ class OllamaLLMProvider(LLMProvider):
             {"role": "user", "content": user_content},
         ]
         return self._client.chat(self._model, messages, temperature=0.1)
+
+    def chat_facts(self, message: str, context_blocks: list[dict]) -> dict:
+        messages = [
+            {"role": "system", "content": FACTS_SYSTEM_PROMPT},
+            {"role": "user", "content": facts_user_prompt(message, context_blocks)},
+        ]
+        raw = self._client.chat(self._model, messages, temperature=0.0, format=FACTS_SCHEMA)
+        return json.loads(raw)
+
+    def chat_overview(self, message: str, context_blocks: list[dict]) -> dict:
+        messages = [
+            {"role": "system", "content": OVERVIEW_SYSTEM_PROMPT},
+            {"role": "user", "content": facts_user_prompt(message, context_blocks)},
+        ]
+        raw = self._client.chat(self._model, messages, temperature=0.0, format=OVERVIEW_SCHEMA)
+        return json.loads(raw)
 
 
 class MockLLMProvider(LLMProvider):

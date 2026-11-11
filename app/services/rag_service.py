@@ -6,6 +6,15 @@ import re
 from psycopg2.extensions import connection as PgConnection
 
 from app.config import get_settings
+from app.services.facts_answer import (
+    compose_answer,
+    compose_overview,
+    exact_match_order,
+    is_overview_question,
+    measure_from_facts,
+    validate_facts,
+    validate_overview,
+)
 from app.services.book_catalog import book_info, citation_label, preferred_filenames
 from app.services.answer_compose import (
     answer_headline,
@@ -152,7 +161,39 @@ class RagService:
                     }
                 )
             try:
-                llm_out = sanitize_answer(self.llm.chat(message, context_blocks))
+                if self.settings.answer_mode == "facts":
+                    order = exact_match_order(message, context_blocks)
+                    context_blocks = [context_blocks[i] for i in order]
+                    llm_hits = [llm_hits[i] for i in order]
+                if self.settings.answer_mode == "facts" and is_overview_question(message):
+                    raw_points = self.llm.chat_overview(message, context_blocks)
+                    logger.info("LLM overview: %s", raw_points)
+                    points = validate_overview(raw_points, context_blocks)
+                    if not points and context_blocks:
+                        points = [
+                            {"text": s, "block": context_blocks[0]}
+                            for s in best_sentences_for_hit(llm_hits[0], message, limit=3)
+                            if s
+                        ]
+                    if points:
+                        answer = compose_overview(points, message)
+                        relevant = True
+                    else:
+                        answer = _NO_DIRECT_ANSWER
+                    llm_out = ""
+                elif self.settings.answer_mode == "facts":
+                    raw_facts = self.llm.chat_facts(message, context_blocks)
+                    logger.info("LLM facts: %s", raw_facts)
+                    facts = validate_facts(raw_facts, context_blocks, message)
+                    if facts:
+                        answer = compose_answer(facts, message)
+                        measure = measure_from_facts(facts)
+                        relevant = True
+                    else:
+                        answer = _NO_DIRECT_ANSWER
+                    llm_out = ""
+                else:
+                    llm_out = sanitize_answer(self.llm.chat(message, context_blocks))
                 if llm_out and not is_degenerate(llm_out):
                     answer = llm_out
                     if self.settings.answer_number_check:
