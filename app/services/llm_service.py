@@ -37,6 +37,9 @@ SYSTEM_PROMPT = """
 - Эх сурвалжийн номын нэр, хуудас, хэсгийг заавал дурда. Зөвхөн хуудас бичиж болохгүй.
 - Олон номоос ирсэн бол ном бүрийг тусад нь заа.
 - Баримтад бичигдээгүй тооцоог "тооцоолсон" гэж тусга.
+- Асуултад дурдсан ангилал, нэр томьёо (жишээ нь «II ангилал») контекстэд байхгүй бол өөрөө тааж холбохгүй. Эхлээд «Баримтад ... гэсэн ангилал байхгүй» гэж нэг өгүүлбэрээр хэлээд, баримтад ашигласан ангиллаар хариул.
+- Утга нь замын төрөл эсвэл нөхцөлөөс хамаарч өөр байвал нэг утга сонгохгүй. Бүх хувилбарыг нөхцөлтэй нь "•" жагсаалтаар бич.
+- Хэд хэдэн хувилбар байвал хариултын төгсгөлд хэрэглэгч аль тохиолдлыг хэлж байгааг нэг богино асуултаар асуу. Ганц хариулттай бол асуулт бүү нэм.
 """
 
 
@@ -54,7 +57,7 @@ class OpenAILLMProvider(LLMProvider):
         self._api_key = settings.llm_api_key
 
     def chat(self, message: str, context_blocks: list[dict]) -> str:
-        context_text = json.dumps(context_blocks, ensure_ascii=False, indent=2)
+        context_text = json.dumps(context_blocks, ensure_ascii=False, separators=(",", ":"))
         user_content = (
             "Дараах нормын баримтаас асуултад хариулна уу.\n\n"
             "Контекст (эх сурвалж):\n"
@@ -94,7 +97,7 @@ class OllamaLLMProvider(LLMProvider):
         self._client = OllamaClient(settings)
 
     def chat(self, message: str, context_blocks: list[dict]) -> str:
-        context_text = json.dumps(context_blocks, ensure_ascii=False, indent=2)
+        context_text = json.dumps(context_blocks, ensure_ascii=False, separators=(",", ":"))
         user_content = (
             "Дараах нормын баримтаас асуултад хариулна уу.\n\n"
             "Контекст (эх сурвалж):\n"

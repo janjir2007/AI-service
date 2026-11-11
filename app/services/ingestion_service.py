@@ -9,8 +9,7 @@ from app.repositories.chunk_repository import ChunkRepository
 from app.repositories.document_repository import DocumentRepository
 from app.services.chunking_service import build_chunks_from_pages
 from app.services.embedding_service import get_embedding_provider
-from app.services.pdf_service import extract_pdf_pages
-from app.services.section_parser import parse_section_heading
+from app.services.pdf_service import extract_pdf_pages, plain_text
 
 logger = logging.getLogger(__name__)
 
@@ -78,11 +77,13 @@ class IngestionService:
                 word_count=word_count,
             )
 
-            page_rows = [(p.page_number, p.text) for p in page_extracts]
+            page_rows = [(p.page_number, plain_text(p.text)) for p in page_extracts]
             self.doc_repo.insert_pages(conn, document_id, page_rows)
 
-            page_tuples = [(p.page_number, p.text, p.tables) for p in page_extracts]
-            chunks, _, _ = build_chunks_from_pages(page_tuples)
+            page_tuples = [
+                (p.page_number, p.text, p.tables, p.chapter, p.chapter_title) for p in page_extracts
+            ]
+            chunks, _, _ = build_chunks_from_pages(page_tuples, strict_headings=True)
 
             sections_detected = len(
                 {
@@ -94,16 +95,11 @@ class IngestionService:
 
             table_rows: list[tuple[int, str | None, str | None, str | None, str]] = []
             tables_detected = 0
-            for p in page_extracts:
-                for table in p.tables:
+            for c in chunks:
+                if c.content_type == "table":
                     tables_detected += 1
-                    title = table.split("\n", 1)[0]
-                    chapter = section = None
-                    for line in p.text.splitlines():
-                        h = parse_section_heading(line)
-                        if h:
-                            chapter, section = h.chapter, h.section
-                    table_rows.append((p.page_number, chapter, section, title, table))
+                    title = c.content.split("\n", 1)[0]
+                    table_rows.append((c.page_number, c.chapter, c.section, title, c.content))
             self.doc_repo.insert_tables(conn, document_id, table_rows)
 
             batch_size = _embed_batch_size()

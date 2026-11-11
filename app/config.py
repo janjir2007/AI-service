@@ -28,6 +28,12 @@ class Settings(BaseSettings):
     rag_top_k: int = 8
     rag_vector_weight: float = 0.7
     rag_keyword_weight: float = 0.3
+    llm_context_chunks: int = 4
+    llm_lead_chunk_chars: int = 3000
+    llm_chunk_chars: int = 1500
+    ollama_num_ctx: int = 8192
+    # Block LLM answers with numbers that are not in the context; no LLM call without relevant sources.
+    answer_number_check: bool = True
     # Lower on 2GB VPS (e.g. 8) to reduce RAM during ingest; chunks flush to DB each batch.
     ingest_embed_batch_size: int = 8
     # find_tables() per page is slow and RAM-heavy on large PDFs; disable on 2GB VPS.

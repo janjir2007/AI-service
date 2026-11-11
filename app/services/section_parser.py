@@ -64,6 +64,17 @@ def parse_section_heading(line: str) -> SectionContext | None:
     return None
 
 
+HEADING_MARK = "§ "
+
+
+def parse_marked_heading(line: str) -> SectionContext | None:
+    """Headings found by pdf_service (bold, numbered) are written as "§ 3.3. Хөвөө"."""
+    stripped = line.strip()
+    if not stripped.startswith(HEADING_MARK):
+        return None
+    return parse_section_heading(stripped[len(HEADING_MARK):])
+
+
 def detect_content_type(text: str) -> str:
     if TABLE_TITLE_RE.search(text) or "|" in text and text.count("|") >= 2:
         return "table"

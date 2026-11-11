@@ -23,6 +23,7 @@ from app.services.answer_compose import (
 )
 from app.services.llm_service import get_llm_provider
 from app.services.query_enhance import direct_answer_from_hits, retrieval_relevant
+from app.services.answer_guard import unsupported_numbers
 from app.services.retrieval_service import RetrievalService
 
 logger = logging.getLogger(__name__)
@@ -132,7 +133,10 @@ class RagService:
         answer = ""
         if use_llm:
             context_blocks = []
-            for h in hits:
+            # Only the top chunks go to the LLM; the first (lead) chunk gets a bigger budget.
+            llm_hits = hits[: self.settings.llm_context_chunks]
+            for i, h in enumerate(llm_hits):
+                limit = self.settings.llm_lead_chunk_chars if i == 0 else self.settings.llm_chunk_chars
                 meta = book_info(h.get("filename"))
                 context_blocks.append(
                     {
@@ -144,13 +148,23 @@ class RagService:
                         "section": h["section"],
                         "title": h["title"],
                         "content_type": h["content_type"],
-                        "content": h["content"][:6000],
+                        "content": h["content"][:limit],
                     }
                 )
             try:
                 llm_out = sanitize_answer(self.llm.chat(message, context_blocks))
                 if llm_out and not is_degenerate(llm_out):
                     answer = llm_out
+                    if self.settings.answer_number_check:
+                        context_texts = [
+                            " ".join(str(v) for v in block.values() if v is not None)
+                            for block in context_blocks
+                        ]
+                        bad = unsupported_numbers(answer, context_texts, message)
+                        if bad:
+                            # A number the book chunks don't contain: don't show a guessed answer.
+                            logger.warning("LLM answer blocked, numbers not in context: %s", bad)
+                            answer = _NO_DIRECT_ANSWER
             except Exception as exc:
                 logger.warning("LLM chat failed, falling back to extractive: %s", exc)
 
@@ -161,14 +175,22 @@ class RagService:
         if not answer:
             if relevant and extractive:
                 answer = extractive
-            elif extractive:
+            elif extractive and not self.settings.answer_number_check:
                 # Even low-relevance extractive is better than nothing
                 answer = extractive
             else:
                 answer = _NO_DIRECT_ANSWER
 
         direct = direct_answer_from_hits(message, hits, best_sentences_for_hit)
-        if direct and (not answer or answer == _NO_DIRECT_ANSWER or not re.search(r"\d", answer)):
+        if self.settings.answer_number_check:
+            # Only fill an empty answer, and only when search found relevant pages. The old rule
+            # also fired on "хурдны зам" (expressway) and swapped in unrelated speed sentences.
+            use_direct = bool(direct) and relevant and not answer
+        else:
+            use_direct = bool(direct) and (
+                not answer or answer == _NO_DIRECT_ANSWER or not re.search(r"\d", answer)
+            )
+        if use_direct:
             answer = direct
             relevant = True
             measure = primary_measurement(direct) or measure
@@ -178,7 +200,12 @@ class RagService:
             ext_measure = primary_measurement(extractive) if extractive else None
             if ext_measure and not measure:
                 measure = ext_measure
-            if ext_measure and not re.search(r"\d+[.,]\d+", answer) and extractive:
+            if (
+                ext_measure
+                and not self.settings.answer_number_check
+                and not re.search(r"\d+[.,]\d+", answer)
+                and extractive
+            ):
                 # LLM gave text but no numbers; blend in extractive data
                 answer = answer.rstrip() + "\n\n" + extractive
 

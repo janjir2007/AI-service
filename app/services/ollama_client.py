@@ -16,15 +16,29 @@ class OllamaClient:
         self._base = base
         self._chat_timeout = settings.ollama_chat_timeout
         self._embed_timeout = settings.ollama_embed_timeout
+        self._num_ctx = settings.ollama_num_ctx
 
     def chat(self, model: str, messages: list[dict[str, str]], temperature: float = 0.1) -> str:
         payload = {
             "model": model,
             "messages": messages,
             "stream": False,
-            "options": {"temperature": temperature, "num_predict": 1024},
+            "options": {"temperature": temperature, "num_predict": 1024, "num_ctx": self._num_ctx},
         }
-        return self._post_json("/api/chat", payload, timeout=self._chat_timeout)["message"]["content"].strip()
+        data = self._post_json("/api/chat", payload, timeout=self._chat_timeout)
+        # Durations from Ollama are in nanoseconds.
+        logger.info(
+            "Ollama chat: num_ctx=%s prompt_tokens=%s answer_tokens=%s "
+            "load=%.1fs prompt=%.1fs answer=%.1fs total=%.1fs",
+            self._num_ctx,
+            data.get("prompt_eval_count"),
+            data.get("eval_count"),
+            data.get("load_duration", 0) / 1e9,
+            data.get("prompt_eval_duration", 0) / 1e9,
+            data.get("eval_duration", 0) / 1e9,
+            data.get("total_duration", 0) / 1e9,
+        )
+        return data["message"]["content"].strip()
 
     def embed(self, model: str, inputs: list[str]) -> list[list[float]]:
         if not inputs:
