@@ -9,3 +9,4 @@ __pycache__/
 data/*.pdf
 !data/.gitkeep
 backup_*.sql
+.DS_Store
