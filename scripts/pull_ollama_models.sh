@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-EMBED_MODEL="${EMBEDDING_MODEL:-nomic-embed-text}"
-CHAT_MODEL="${LLM_MODEL:-qwen2.5:7b}"
+EMBED_MODEL="${EMBEDDING_MODEL:-bge-m3}"
+CHAT_MODEL="${LLM_MODEL:-gemma4:e2b-it-qat}"
 
 if ! command -v ollama >/dev/null 2>&1; then
   echo "Ollama is not installed. Get it from https://ollama.com"

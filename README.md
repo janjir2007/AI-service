@@ -93,10 +93,9 @@ pytest -q
 
 ## Roadmap
 
-- [ ] Switch embeddings to `bge-m3` (multilingual, 1024 dims; migration + re-ingest)
-- [ ] Switch LLM to the Mongolian Gemma 3 4B model (GGUF in Ollama)
+- [x] Switch embeddings to `bge-m3` (multilingual, 1024 dims; migration + re-ingest)
+- [x] Switch LLM to Gemma 4 E2B (`gemma4:e2b-it-qat`) with facts mode
 - [ ] Fix chunking: text is labeled with the last section heading on its page
 - [ ] Replace the rule-based normalizer with the ByT5 mongolian-translit model
 - [ ] Cyrillic / Latin / mixed evaluation set for road answers
-- [ ] Greeting spelling variants (ugluuni mend, udrin mend), looser "mend" matching
 - [ ] Greeting spelling variants (ugluuni mend, udrin mend), looser "mend" matching

@@ -11,12 +11,12 @@ class Settings(BaseSettings):
 
     # Default: fully local via Ollama (no API cost).
     embedding_provider: str = "ollama"
-    embedding_model: str = "nomic-embed-text"
+    embedding_model: str = "bge-m3"
     embedding_api_key: str = ""
-    embedding_dimension: int = 768
+    embedding_dimension: int = 1024
 
     llm_provider: str = "ollama"
-    llm_model: str = "qwen2.5:7b"
+    llm_model: str = "gemma4:e2b-it-qat"
     llm_api_key: str = ""
     # Grounded RAG answers via LLM (Ollama local or OpenAI). Falls back to extractive if LLM fails.
     chat_use_llm: bool = True
@@ -34,8 +34,8 @@ class Settings(BaseSettings):
     ollama_num_ctx: int = 8192
     ollama_num_predict: int = 600
     ollama_repeat_penalty: float = 1.1
-    ollama_think: str = ""  # "false" turns off thinking (Gemma 4); empty = not sent
-    answer_mode: str = "text"  # text | facts
+    ollama_think: str = "false"  # "false" turns off thinking (Gemma 4); empty = not sent
+    answer_mode: str = "facts"  # text | facts
     # Block LLM answers with numbers that are not in the context; no LLM call without relevant sources.
     answer_number_check: bool = True
     # Lower on 2GB VPS (e.g. 8) to reduce RAM during ingest; chunks flush to DB each batch.
