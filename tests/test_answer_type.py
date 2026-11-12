@@ -34,3 +34,9 @@ def test_drainage_is_not_distance():
     q = "Ус зайлуулах сувгийн дагуу налуу хэд байх ёстой вэ?"
     assert expected_kind(q) is None
     assert answer_type_ok(q, "0.3", "%")
+
+
+def test_ev_question_is_road_weather_is_not():
+    from app.services.intent_router import classify_message
+    assert classify_message("Цахилгаан автомашины цэнэглэх станц хоорондын зай хэд байх ёстой вэ?").intent == "road"
+    assert classify_message("Өнөөдөр цаг агаар ямар байна?").intent == "unknown"

@@ -6,6 +6,7 @@ from app.config import get_settings
 from app.db import get_connection
 from app.db_schema import missing_tables, schema_status
 from app.models.schemas import ChatBook, ChatRequest, ChatResponse, ChatSource
+from app.services.rag_service import _NO_DIRECT_ANSWER
 from app.services.intent_router import (
     SMALL_TALK,
     RouteResult,
@@ -73,7 +74,8 @@ def chat(body: ChatRequest) -> ChatResponse:
         raise HTTPException(status_code=503, detail=msg) from exc
 
     # 3) Nothing relevant found for a non-road question: polite off-topic reply.
-    if route.intent == "unknown" and not result["sources"]:
+    # Not a road question and RAG found no direct answer: polite roads-only reply.
+    if route.intent == "unknown" and (not result["sources"] or result.get("answer") == _NO_DIRECT_ANSWER):
         route.intent = "off_topic"
         return _reply(route, off_topic_reply())
 
