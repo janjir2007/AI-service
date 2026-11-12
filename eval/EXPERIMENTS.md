@@ -20,3 +20,4 @@
 | 2026-11-12 | Off-topic reply when router says unknown and RAG finds no answer; more road words in router (машин, цэнэгл, станц…) | 19 ✓ / 1 ~ / 3 ✗ (of 23) | yes | q21 fixed; q20 kept honest |
 | 2026-11-12 | Class names not used in the book (II ангилал, 3-р ангилал…): answer without them + note with the book's Зэрэг 1–3 | 20 ✓ / 1 ~ / 2 ✗ (of 23) | yes | q05 fixed without guessing a mapping |
 | 2026-11-12 | sources: the answer's own chunk (table lookup / Gemma's pick / overview sentences) listed first | 20 ✓ / 1 ~ / 2 ✗ (of 23) | yes | right page cited: see run 1258 |
+| 2026-11-12 | sources: the answer's own chunk (table lookup / Gemma's pick / overview sentences) listed first | 20 ✓ / 1 ~ / 2 ✗ (of 23) | yes | page misses only q14 (wrong answer) and q23 (no answer) |
