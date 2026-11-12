@@ -35,7 +35,7 @@ WORD_MAP: dict[str, str] = {
     "ali": "аль", "yaj": "яаж", "yagaad": "яагаад", "ve?": "вэ?", "sonin": "сонин",
     # road / norm vocabulary
     "zam": "зам", "zamiin": "замын", "zamin": "замын", "zamyn": "замын", "zamd": "замд",
-    "avto": "авто", "yavgan": "явган", "hunii": "хүний", "huni": "хүний", "hun": "хүн", "urgun": "өргөн",
+    "avto": "авто", "yavgan": "явган", "hunii": "хүний", "huni": "хүний", "tumur": "төмөр", "tumriin": "төмрийн", "hun": "хүн", "urgun": "өргөн",
     "urgen": "өргөн", "urgunii": "өргөний", "urt": "урт", "undur": "өндөр",
     "hurd": "хурд", "hurdnii": "хурдны", "hurdni": "хурдны", "hyazgaar": "хязгаар",
     "norm": "норм", "normiin": "нормын", "normin": "нормын", "barilga": "барилга",

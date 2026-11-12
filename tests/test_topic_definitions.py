@@ -132,3 +132,9 @@ def test_compose_list_only():
     text = compose_topic_answer("Хучилт", None, None, [_sec("5.1", "Хучилтын бүтэц", 300, 302, 4)])
     assert "Тодорхойлолт" not in text
     assert "Дараах хэсгүүдэд дурдсан: 5.1 Хучилтын бүтэц (х. 300–302)" in text
+
+
+def test_latin_tumur():
+    from app.services.script_utils import latin_to_cyrillic
+    assert latin_to_cyrillic("tumur zam") == "төмөр зам"
+    assert latin_to_cyrillic("tumriin zam") == "төмрийн зам"
