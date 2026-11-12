@@ -6,6 +6,7 @@ import re
 from psycopg2.extensions import connection as PgConnection
 
 from app.config import get_settings
+from app.services.topic_answer import build_topic_answer, topic_of
 from app.services.facts_answer import (
     compose_answer,
     compose_overview,
@@ -67,6 +68,44 @@ def _source_from_hit(hit: dict) -> dict:
     }
 
 
+def _topic_response(result: dict) -> dict:
+    """Response for a topic answer (built straight from the database, no search hits)."""
+    sources: list[dict] = []
+    seen = set()
+    for h in result["hits"]:
+        src = _source_from_hit(h)
+        key = (src.get("filename"), src["page"], src.get("section"))
+        if key in seen:
+            continue
+        seen.add(key)
+        excerpt = sanitize_answer(h["content"], max_len=600) if h.get("content") else ""
+        sources.append({**src, "excerpt": excerpt})
+    books: list[dict] = []
+    seen_books = set()
+    for src in sources:
+        bid = src.get("book_id") or src.get("filename")
+        if not bid or bid in seen_books:
+            continue
+        seen_books.add(bid)
+        books.append(
+            {
+                "book_id": src.get("book_id"),
+                "filename": src.get("filename"),
+                "code": src.get("code"),
+                "title": src.get("book"),
+                "label": citation_label(src),
+            }
+        )
+    return {
+        "answer": result["answer"],
+        "sources": sources,
+        "books": books,
+        "primary_value": None,
+        "primary_unit": None,
+        "headline": result["headline"],
+    }
+
+
 def _hit_of(block: dict, context_blocks: list[dict], llm_hits: list[dict]) -> dict | None:
     """The search hit an answer block came from (table lookup keeps it in _hit)."""
     if block.get("_hit") is not None:
@@ -117,6 +156,22 @@ class RagService:
         top_k: int = 8,
         filenames: list[str] | None = None,
     ) -> dict:
+        # Bare topic ("хөвөө", "yavgan huni zam"): definition + where to read, from the database.
+        if self.settings.answer_mode == "facts":
+            topic = topic_of(message)
+            if topic:
+                try:
+                    topic_result = build_topic_answer(conn, topic, filenames=filenames)
+                except Exception as exc:
+                    logger.warning("Topic answer failed for %r: %s", topic, exc)
+                    topic_result = None
+                    try:
+                        conn.rollback()
+                    except Exception:
+                        pass
+                if topic_result:
+                    logger.info("Topic answer: %r -> %s", topic, topic_result["headline"])
+                    return _topic_response(topic_result)
         hits = self.retrieval.search(conn, message, top_k=top_k, filenames=filenames)
         if not hits:
             return {
