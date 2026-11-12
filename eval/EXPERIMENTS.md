@@ -12,3 +12,4 @@
 | 2026-11-11 | Facts mode (JSON facts + checks, overview/yes-no path, exact-match priority, row check) | 13 ✓ / 3 ~ / 5 ✗ | ANSWER_MODE=facts (default still text) | same ✗ as text, q04/q19 now honest; q08 book conflict; q03/q05/q09/q14 table reading |
 | 2026-11-12 | LLM gemma3:4b → gemma4:e2b-it-qat (facts mode, think off) | 15 ✓ / 1 ~ / 5 ✗ | yes (local .env) | +q03 q08 q19 (better table reading), -q02 (prose 3.5-3.75 vs Table 3.2), -q04 (one value instead of column) |
 | 2026-12-12 | Table lookup (row+column from table chunks, before LLM; reads search results before same-page removal) | 16 ✓ / 1 ~ / 4 ✗ | yes | q02 fixed; q04 still ✗; found: same-page removal drops tables from LLM context |
+| 2026-11-12 | Table lookup (row+column from table chunks, before LLM; reads search results before same-page removal) | 16 ✓ / 1 ~ / 4 ✗ | yes | q02 fixed; q04 still ✗; found: same-page removal drops tables from LLM context |
