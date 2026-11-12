@@ -134,6 +134,37 @@ def match_sections(sections: list[dict], topic_stems: tuple) -> tuple[Optional[d
     return main, others[:MAX_OTHERS]
 
 
+# ---- Scattered topics: where the text mentions the topic ----------------------------------
+
+_MENTIONS_SQL = """
+SELECT c.document_id, d.name AS filename, d.file_path, c.section, c.section_title,
+       MIN(c.page_number) AS p_from, MAX(c.page_number) AS p_to, COUNT(*) AS n
+FROM ai_document_chunks c JOIN ai_documents d ON d.id = c.document_id
+WHERE c.content ~* %s AND COALESCE(c.section, '') <> ''
+GROUP BY c.document_id, d.name, d.file_path, c.section, c.section_title
+ORDER BY n DESC, p_from
+LIMIT 12
+"""
+
+
+def mention_pattern(topic: str) -> str:
+    """Postgres regex for the topic in any case form: each word stem + any Cyrillic letters."""
+    parts = [re.escape(stem(w)) + "[а-яөүё]*" for w in re.findall(r"\w+", (topic or "").lower())]
+    return r"\m" + r"\s+".join(parts)
+
+
+def merge_scattered(title_matches: list[dict], mentions: list[dict], limit: int = MAX_OTHERS) -> list[dict]:
+    """Title matches first (strongest), then sections by mention count; no duplicates."""
+    out, seen = [], set()
+    for s in list(title_matches) + list(mentions):
+        key = (s["document_id"], s["section"])
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(s)
+    return out[:limit]
+
+
 # ---- Definitions ----------------------------------------------------------------------------
 
 _SENT_SPLIT = re.compile(r"(?<=[.!?])\s+")
@@ -234,7 +265,7 @@ def compose_topic_answer(headline: str, definition: Optional[dict], main: Option
                  else f"х. {definition['page']}")
         lines.append(f"Тодорхойлолт: {definition['text']} ({where})")
     if others:
-        label = "Бусад хэсэг" if main else "Холбогдох хэсэг"
+        label = "Бусад хэсэг" if main else "Номд тусдаа бүлэг байхгүй. Дараах хэсгүүдэд дурдсан"
         lines.append(label + ": " + "; ".join(
             f"{o['section']} {o['section_title']} ({_pages(o['p_from'], o['p_to'])})" for o in others
         ))
@@ -311,7 +342,11 @@ def build_topic_answer(conn: Any, topic: str, filenames: Optional[list[str]] = N
         if entry:
             definition = {"text": entry["text"], "page": entry["page"], "glossary": True, "term": entry["term"]}
             hits.append(_hit(entry["row"], entry["page"], None, GLOSSARY_TITLE, entry["text"]))
-    if main is None and definition is None:
+    if main is None:
+        mentions = [s for s in _fetch(conn, _MENTIONS_SQL, (mention_pattern(topic),))
+                    if _doc_ok(s, filenames)]
+        others = merge_scattered(others, mentions)
+    if main is None and definition is None and not others:
         return None
 
     if main:

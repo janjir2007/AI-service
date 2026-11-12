@@ -105,10 +105,30 @@ def test_compose_glossary_answer():
         main, others,
     )
     assert "(Нэр томьёо, х. 574)" in text
-    assert "Холбогдох хэсэг: 9.3.8 Унадаг дугуйн болон явган хүний зам (х. 449–450)" in text
+    assert "Номд тусдаа бүлэг байхгүй. Дараах хэсгүүдэд дурдсан: 9.3.8 Унадаг дугуйн болон явган хүний зам (х. 449–450)" in text
     assert "Дэлгэрэнгүй" not in text
 
 
 def test_latin_huni_single_i():
     from app.services.script_utils import latin_to_cyrillic
     assert latin_to_cyrillic("yavgan huni zam") == "явган хүний зам"
+
+
+def test_mention_pattern():
+    from app.services.topic_answer import mention_pattern
+    assert mention_pattern("явган хүний зам") == r"\mявга[а-яөүё]*\s+хүн[а-яөүё]*\s+зам[а-яөүё]*"
+
+
+def test_merge_scattered_title_first():
+    from app.services.topic_answer import merge_scattered
+    title = [_sec("9.3.8", "Унадаг дугуйн болон явган хүний зам", 449, 450, 3)]
+    mentions = [_sec("9.3.8", "Унадаг дугуйн болон явган хүний зам", 449, 450, 3),
+                _sec("8.4.9", "Зохицуулалттай эгнээ", 415, 419, 2),
+                _sec("9.3.4", "Замын хажуугийн орчны төсөллөлт", 446, 447, 2)]
+    assert [s["section"] for s in merge_scattered(title, mentions)] == ["9.3.8", "8.4.9", "9.3.4"]
+
+
+def test_compose_list_only():
+    text = compose_topic_answer("Хучилт", None, None, [_sec("5.1", "Хучилтын бүтэц", 300, 302, 4)])
+    assert "Тодорхойлолт" not in text
+    assert "Дараах хэсгүүдэд дурдсан: 5.1 Хучилтын бүтэц (х. 300–302)" in text
