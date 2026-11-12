@@ -56,6 +56,7 @@ class RetrievalService:
         query: str,
         top_k: int | None = None,
         filenames: list[str] | None = None,
+        tables_only: bool = False,
     ) -> list[dict]:
         top_k = top_k or self.settings.rag_top_k
         raw_query = query.strip()
@@ -78,6 +79,7 @@ class RetrievalService:
             query_vector=query_vector,
             limit=pool,
             filenames=preferred,
+            tables_only=tables_only,
         )
         useful = [
             h
@@ -93,6 +95,7 @@ class RetrievalService:
                 query_vector=query_vector,
                 limit=pool,
                 filenames=None,
+                tables_only=tables_only,
             )
         elif preferred:
             hits = useful
@@ -108,12 +111,15 @@ class RetrievalService:
         query_vector: list[float],
         limit: int,
         filenames: list[str] | None,
+        tables_only: bool = False,
     ) -> list[dict]:
         vw = self.settings.rag_vector_weight
         kw = self.settings.rag_keyword_weight
         or_q = _or_tsquery(raw_query)
         like = _like_pattern(raw_query)
         file_filter = "AND d.name = ANY(%s)" if filenames else ""
+        # fixed constant, not user input
+        type_filter = "AND c.content_type = 'table'" if tables_only else ""
 
         sql = f"""
         WITH ranked AS (
@@ -148,6 +154,7 @@ class RetrievalService:
             JOIN ai_documents d ON d.id = c.document_id
             WHERE (c.search_vector IS NOT NULL OR c.embedding IS NOT NULL)
               {file_filter}
+              {type_filter}
         )
         SELECT
             content, page, chapter, section, title, content_type, filename,

@@ -185,6 +185,20 @@ class RagService:
                         answer = _NO_DIRECT_ANSWER
                     llm_out = ""
                 elif self.settings.answer_mode == "facts":
+                    try:
+                        table_hits = self.retrieval.search(
+                            conn, message, top_k=5, filenames=filenames, tables_only=True
+                        )
+                    except Exception as exc:
+                        logger.warning("Table search failed: %s", exc)
+                        table_hits = []
+                    seen_tables = set()
+                    table_source = []
+                    for h in search_hits + table_hits:
+                        key = (h.get("filename"), h.get("page"), (h.get("content") or "")[:80])
+                        if key not in seen_tables:
+                            seen_tables.add(key)
+                            table_source.append(h)
                     table_blocks = [
                         {
                             **book_info(h.get("filename")),
@@ -194,7 +208,7 @@ class RagService:
                             "content_type": h["content_type"],
                             "content": h["content"],
                         }
-                        for h in search_hits
+                        for h in table_source
                         if h.get("content_type") == "table"
                     ]
                     facts = table_lookup(message, table_blocks)

@@ -39,7 +39,7 @@ def normalize(text: str) -> str:
     text = (text or "").lower()
     text = re.sub(r"[–—−]", "-", text)
     text = re.sub(r"(?<=\d),(?=\d)", ".", text)
-    text = re.sub(r"\s*-\s*(?=\d)", "-", text)
+    text = re.sub(r"(?<=\d)\s*-\s*(?=\d)", "-", text)  # only ranges: number - number
     text = re.sub(r"(?<=\d)\s*(?:м|см|мм)\s*-\s*(?=\d)", "-", text)
     return text
 
