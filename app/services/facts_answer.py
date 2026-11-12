@@ -215,7 +215,9 @@ def source_line(block: dict) -> str:
     parts = [block.get("code") or block.get("book") or ""]
     if block.get("page"):
         parts.append(f"х. {block['page']}")
-    table = _TABLE.search(_clean(block.get("title")))
+    table = _TABLE.search(_clean(block.get("title"))) or (
+        _TABLE.search((block.get("content") or "")[:120]) if block.get("content_type") == "table" else None
+    )
     section = _clean(block.get("section"))
     if table:
         parts.append(table.group(0))
@@ -232,6 +234,9 @@ def compose_answer(f: dict, message: str = "") -> str:
         )
     else:
         head = f"**{f['subject']}**" if f["subject"] else ""
+        if not head and f["cases"]:
+            stem = question_stem(message)
+            head = f"**{stem}:**" if stem else ""
     lines = [head] if head else []
     if f["cases"]:
         lines += ["", "Нөхцөлөөс хамаарч:"]
@@ -322,7 +327,9 @@ def validate_overview(raw: Any, blocks: list[dict], max_points: int = 5) -> list
 
 
 def _ref(block: dict) -> str:
-    table = _TABLE.search(_clean(block.get("title")))
+    table = _TABLE.search(_clean(block.get("title"))) or (
+        _TABLE.search((block.get("content") or "")[:120]) if block.get("content_type") == "table" else None
+    )
     section = _clean(block.get("section"))
     if table:
         return table.group(0)
@@ -414,3 +421,133 @@ def exact_match_order(message: str, blocks: list[dict]) -> list[int]:
         return list(range(len(blocks)))
     hit = [i for i, b in enumerate(blocks) if any(tok in _block_text(b).lower() for tok in tokens)]
     return hit + [i for i in range(len(blocks)) if i not in hit]
+
+
+# ---- Table lookup: answer value questions straight from table chunks ----------------------------
+
+_ROW = re.compile(r"^(.+?)\s+—\s+(.+)$")
+_SKIP_WORDS = {"хэд", "хэдэн", "ямар", "байх", "байна", "байдаг", "вэ", "бэ", "нь", "гэж", "юу"}
+_UNIT_IN_NAME = re.compile(r"\(([^()]{1,8})\)")
+
+
+def _fold(s: str) -> str:
+    return s.lower().replace("ү", "у").replace("ө", "о").replace("ё", "е")
+
+
+def _stems(text: str) -> set[str]:
+    """Word stems for matching (first 5 letters, ү/у ө/о folded). Question words and зам* are ignored."""
+    out: set[str] = set()
+    for w in re.findall(r"[A-Za-zА-Яа-яЁёӨөҮү]+", text or ""):
+        w = _fold(w)
+        if len(w) < 3 or w in _SKIP_WORDS or w.startswith("зам"):
+            continue
+        out.add(w[:5])
+    return out
+
+
+def question_stem(message: str) -> str:
+    """'Хөдөлгөөний зурвасын өргөн хэд вэ?' -> 'Хөдөлгөөний зурвасын өргөн'"""
+    m = _Q_END.search(message or "")
+    if not m:
+        return ""
+    stem = (message or "")[: m.start()].strip(" ,")
+    return stem[0].upper() + stem[1:] if len(stem.split()) >= 2 else ""
+
+
+def parse_table(block: dict) -> dict | None:
+    """Rows of a table chunk: 'key — column: value; column: value'."""
+    if str(block.get("content_type") or "").lower() != "table":
+        return None
+    rows = []
+    for line in (block.get("content") or "").splitlines():
+        line = line.strip()
+        if not line or line.startswith("Баганууд:"):
+            continue
+        m = _ROW.match(line)
+        if not m:
+            continue
+        cells = {}
+        for part in m.group(2).split(";"):
+            if ":" not in part:
+                continue
+            name, val = part.rsplit(":", 1)
+            if name.strip() and val.strip():
+                cells[name.strip()] = val.strip()
+        if cells:
+            rows.append({"key": m.group(1).strip(), "cells": cells})
+    return {"rows": rows} if rows else None
+
+
+def _col_unit(name: str) -> str:
+    units = _UNIT_IN_NAME.findall(name)
+    return units[-1].strip() if units else ""
+
+
+def table_lookup(message: str, blocks: list[dict]) -> dict | None:
+    """Answer a value question straight from a table chunk, or None when not confident."""
+    q_nums = _numbers(message)
+    q_stems = _stems(message)
+    if not q_stems:
+        return None
+    row_hits: list[tuple] = []
+    col_hits: list[tuple] = []
+    for b in blocks:
+        table = parse_table(b)
+        if not table:
+            continue
+        rows = table["rows"]
+        columns = list(dict.fromkeys(c for r in rows for c in r["cells"]))
+        scored = sorted(((len(_stems(c) & q_stems), c) for c in columns), key=lambda s: s[0], reverse=True)
+        if not scored or scored[0][0] < 2 or (len(scored) > 1 and scored[1][0] == scored[0][0]):
+            continue
+        score, col = scored[0]
+        matches = []
+        for r in rows:
+            key_nums = _numbers(r["key"])
+            if key_nums:
+                if key_nums & q_nums:
+                    matches.append((100, r))
+            else:
+                ks = _stems(r["key"])
+                if ks and ks <= q_stems:
+                    matches.append((len(ks), r))
+        if matches:
+            matches.sort(key=lambda m: m[0], reverse=True)
+            if len(matches) > 1 and matches[1][0] == matches[0][0]:
+                continue  # two rows fit equally well
+            row = matches[0][1]
+            if col in row["cells"] and len(q_stems - _stems(col) - _stems(row["key"])) <= 2:
+                row_hits.append((score, b, rows, row, col))
+        elif not q_nums and not (q_stems - _stems(col)):
+            col_hits.append((score, b, rows, col))
+
+    if row_hits:
+        row_hits.sort(key=lambda h: h[0], reverse=True)
+        best = row_hits[0]
+        if any(h[0] == best[0] and h[3]["cells"][h[4]] != best[3]["cells"][best[4]] for h in row_hits[1:]):
+            return None  # tables disagree
+        _, b, rows, row, col = best
+        unit = _col_unit(col)
+        cases = []
+        if not _numbers(row["key"]):
+            cases = [
+                {"case": r["key"], "value": _strip_unit(r["cells"][col], unit), "unit": unit}
+                for r in rows
+                if r is not row and col in r["cells"]
+            ][:6]
+        return {"subject": row["key"], "value": _strip_unit(row["cells"][col], unit), "unit": unit,
+                "cases": cases, "note": "", "block": b}
+
+    if col_hits:
+        col_hits.sort(key=lambda h: h[0], reverse=True)  # stable: best search rank wins ties
+        _, b, rows, col = col_hits[0]
+        unit = _col_unit(col)
+        cases = [
+            {"case": r["key"], "value": _strip_unit(r["cells"][col], unit), "unit": unit}
+            for r in rows
+            if col in r["cells"]
+        ][:8]
+        if len(cases) < 2:
+            return None
+        return {"subject": "", "value": "", "unit": unit, "cases": cases, "note": "", "block": b}
+    return None

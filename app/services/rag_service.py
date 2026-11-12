@@ -12,6 +12,7 @@ from app.services.facts_answer import (
     exact_match_order,
     is_overview_question,
     measure_from_facts,
+    table_lookup,
     validate_facts,
     validate_overview,
 )
@@ -118,6 +119,7 @@ class RagService:
         hits = rerank_hits_for_query(hits, message)
         lead_pack = best_lead_for_query(hits, message)
         relevant = retrieval_relevant(message, lead_pack)
+        search_hits = list(hits)  # before same-page removal; the table lookup needs every table
         if lead_pack:
             lead_hit = lead_pack[2]
             lead_key = (lead_hit.get("filename"), lead_hit.get("page"))
@@ -182,9 +184,25 @@ class RagService:
                         answer = _NO_DIRECT_ANSWER
                     llm_out = ""
                 elif self.settings.answer_mode == "facts":
-                    raw_facts = self.llm.chat_facts(message, context_blocks)
-                    logger.info("LLM facts: %s", raw_facts)
-                    facts = validate_facts(raw_facts, context_blocks, message)
+                    table_blocks = [
+                        {
+                            **book_info(h.get("filename")),
+                            "page": h["page"],
+                            "section": h["section"],
+                            "title": h["title"],
+                            "content_type": h["content_type"],
+                            "content": h["content"],
+                        }
+                        for h in search_hits
+                        if h.get("content_type") == "table"
+                    ]
+                    facts = table_lookup(message, table_blocks)
+                    if facts:
+                        logger.info("Table lookup: %s | %s %s", facts["subject"] or "(whole column)", facts["value"], facts["unit"])
+                    else:
+                        raw_facts = self.llm.chat_facts(message, context_blocks)
+                        logger.info("LLM facts: %s", raw_facts)
+                        facts = validate_facts(raw_facts, context_blocks, message)
                     if facts:
                         answer = compose_answer(facts, message)
                         measure = measure_from_facts(facts)
