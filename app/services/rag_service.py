@@ -11,6 +11,7 @@ from app.services.facts_answer import (
     compose_overview,
     exact_match_order,
     is_overview_question,
+    answer_type_ok,
     measure_from_facts,
     table_lookup,
     validate_facts,
@@ -197,6 +198,8 @@ class RagService:
                         if h.get("content_type") == "table"
                     ]
                     facts = table_lookup(message, table_blocks)
+                    if facts and not answer_type_ok(message, facts["value"], facts["unit"]):
+                        facts = None
                     if facts:
                         logger.info("Table lookup: %s | %s %s", facts["subject"] or "(whole column)", facts["value"], facts["unit"])
                     else:

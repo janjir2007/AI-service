@@ -43,6 +43,9 @@ def enhance_search_query(query: str) -> str:
             "хөдөлмөр зарцуулалт",
             "хүн цаг",
         ])
+    if "эгнээ" in lower:
+        # users say эгнээ, the book says хөдөлгөөний зурвас
+        extra.extend(["хөдөлгөөний зурвас", "зурвасын тоо"])
     if not extra:
         return q
     seen = set(lower.split())

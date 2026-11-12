@@ -89,7 +89,7 @@ def _supported(value: str, block: dict) -> bool:
     nums = _numbers(value)
     text = _block_text(block)
     if nums:
-        return nums <= _numbers(text)
+        return nums <= (_numbers(text) | _word_numbers(text))
     flat = _flat(value)
     return bool(flat) and flat in _flat(text)
 
@@ -165,6 +165,8 @@ def validate_facts(facts: Any, blocks: list[dict], message: str = "") -> dict | 
     if note:
         note = _extend_note(note, blocks)
     if not value and not note:
+        return None
+    if not answer_type_ok(message, value, unit):
         return None
 
     return {
@@ -551,3 +553,50 @@ def table_lookup(message: str, blocks: list[dict]) -> dict | None:
             return None
         return {"subject": "", "value": "", "unit": unit, "cases": cases, "note": "", "block": b}
     return None
+
+
+# ---- Answer type: a "how many" question needs a count, a width question needs a length --------
+
+_NUM_WORDS = {
+    "нэг": "1", "хоёр": "2", "гурав": "3", "гурван": "3", "дөрөв": "4", "дөрвөн": "4",
+    "тав": "5", "таван": "5", "зургаа": "6", "зургаан": "6", "долоо": "7", "долоон": "7",
+    "найм": "8", "найман": "8", "ес": "9", "есөн": "9", "арав": "10", "арван": "10",
+}
+_LENGTH_UNITS = {"м", "см", "мм", "км", "метр"}
+_SPEED_UNITS = {"км/ц", "км/цаг"}
+_OTHER_UNITS = {"%", "‰", "°", "°c"}
+_HOW_MUCH = re.compile(r"(?:^|\s)хэд(?:эн)?(?=\s|$|[?!.,])", re.IGNORECASE)
+_COUNT_Q = re.compile(r"(?:^|\s)хэдэн\s+(?!метр|м\b|см|км|хувь|градус|минут|секунд|цаг|жил|сар|хоног)", re.IGNORECASE)
+# word starts only: "ус зайлуулах" (drainage) is not "зай" (distance)
+_LENGTH_Q = re.compile(r"(?:^|\s)(?:өргөн|урт|өндөр|гүн|зузаан|радиус|зай(?!луул))", re.IGNORECASE)
+_SPEED_KIND_Q = re.compile(r"хурд(?!ны\s+(?:авто\s+)?зам)", re.IGNORECASE)
+
+
+def _word_numbers(text: str) -> set[str]:
+    return {_NUM_WORDS[w] for w in re.findall(r"[А-Яа-яЁёӨөҮү]+", (text or "").lower()) if w in _NUM_WORDS}
+
+
+def expected_kind(message: str) -> str | None:
+    m = message or ""
+    if not _HOW_MUCH.search(m):
+        return None
+    if _COUNT_Q.search(m) and not _LENGTH_Q.search(m):
+        return "count"
+    if _LENGTH_Q.search(m):
+        return "length"
+    if _SPEED_KIND_Q.search(m):
+        return "speed"
+    return None
+
+
+def answer_type_ok(message: str, value: str, unit: str) -> bool:
+    """Reject only clear mismatches: a length for a count question, a count for a width question..."""
+    kind = expected_kind(message)
+    u = (unit or "").strip().lower().rstrip(".")
+    if not kind or not u:
+        return True
+    if kind == "count":
+        return u not in (_LENGTH_UNITS | _SPEED_UNITS | _OTHER_UNITS)
+    if kind == "length":
+        return u in _LENGTH_UNITS
+    return u in _SPEED_UNITS

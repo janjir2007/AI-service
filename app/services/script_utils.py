@@ -46,13 +46,13 @@ WORD_MAP: dict[str, str] = {
     "temdeg": "тэмдэг", "tsag": "цаг", "ajilchin": "ажилчин", "ajilchnii": "ажилчны",
     "geodez": "геодез", "geodeziin": "геодезийн", "tusuv": "төсөв", "tusviin": "төсвийн",
     "jishig": "жишиг", "gudamj": "гудамж", "zogsool": "зогсоол", "us": "ус",
-    "zogsoh": "зогсох", "uyiin": "үеийн", "uyin": "үеийн", "uzegdeh": "үзэгдэх", "zai": "зай",
+    "ystoi": "ёстой", "yostoi": "ёстой", "egnee": "эгнээ", "zogsoh": "зогсох", "uyiin": "үеийн", "uyin": "үеийн", "uzegdeh": "үзэгдэх", "zai": "зай",
     "zailuulah": "зайлуулах", "suuri": "суурь", "km": "км", "m": "м", "sm": "см",
 }
 
 # Multi-letter rules first, then single letters.
 _DIGRAPHS = [("sh", "ш"), ("ch", "ч"), ("ts", "ц"), ("kh", "х"), ("ya", "я"),
-             ("yo", "ё"), ("yu", "ю"), ("ye", "е")]
+             ("yo", "ё"), ("yu", "ю"), ("ye", "е"), ("ii", "ий")]
 _LETTERS = {
     "a": "а", "b": "б", "v": "в", "w": "в", "g": "г", "d": "д", "e": "э", "j": "ж",
     "z": "з", "i": "и", "k": "к", "q": "к", "l": "л", "m": "м", "n": "н", "o": "о",
@@ -108,6 +108,8 @@ def _letters_to_cyrillic(word: str) -> str:
             # word-final y after a vowel is й ("sain" style), otherwise ы ("zamyn")
             prev = low[i - 1] if i else ""
             out.append("й" if prev in "aeiou" and i == len(low) - 1 else "ы")
+        elif ch == "i" and i > 0 and low[i - 1] in "aeou":
+            out.append("й")  # baih -> байх, egneetei -> эгнээтэй
         elif ch in _LETTERS:
             out.append(_LETTERS[ch])
         else:
