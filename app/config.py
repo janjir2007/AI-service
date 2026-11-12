@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     ollama_num_ctx: int = 8192
     ollama_num_predict: int = 600
     ollama_repeat_penalty: float = 1.1
+    ollama_think: str = ""  # "false" turns off thinking (Gemma 4); empty = not sent
     answer_mode: str = "text"  # text | facts
     # Block LLM answers with numbers that are not in the context; no LLM call without relevant sources.
     answer_number_check: bool = True

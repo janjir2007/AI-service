@@ -19,6 +19,7 @@ class OllamaClient:
         self._num_ctx = settings.ollama_num_ctx
         self._num_predict = settings.ollama_num_predict
         self._repeat_penalty = settings.ollama_repeat_penalty
+        self._think = settings.ollama_think.strip().lower()
 
     def chat(
         self,
@@ -40,6 +41,8 @@ class OllamaClient:
         }
         if format is not None:
             payload["format"] = format
+        if self._think in ("true", "false"):
+            payload["think"] = self._think == "true"
         data = self._post_json("/api/chat", payload, timeout=self._chat_timeout)
         # Durations from Ollama are in nanoseconds.
         logger.info(
