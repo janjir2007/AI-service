@@ -67,6 +67,16 @@ def _source_from_hit(hit: dict) -> dict:
     }
 
 
+def _hit_of(block: dict, context_blocks: list[dict], llm_hits: list[dict]) -> dict | None:
+    """The search hit an answer block came from (table lookup keeps it in _hit)."""
+    if block.get("_hit") is not None:
+        return block["_hit"]
+    for b, h in zip(context_blocks, llm_hits):
+        if b is block:
+            return h
+    return None
+
+
 def _llm_chat_enabled(provider: str, chat_use_llm: bool) -> bool:
     if not chat_use_llm:
         return False
@@ -145,6 +155,7 @@ class RagService:
 
         answer = ""
         class_note = ""
+        answer_hits: list[dict] = []  # what the answer was built from; first in sources
         if use_llm:
             context_blocks = []
             # Only the top chunks go to the LLM; the first (lead) chunk gets a bigger budget.
@@ -185,6 +196,7 @@ class RagService:
                     if points:
                         answer = compose_overview(points, message)
                         relevant = True
+                        answer_hits = [_hit_of(pt["block"], context_blocks, llm_hits) for pt in points]
                     else:
                         answer = _NO_DIRECT_ANSWER
                     llm_out = ""
@@ -211,6 +223,7 @@ class RagService:
                             "title": h["title"],
                             "content_type": h["content_type"],
                             "content": h["content"],
+                            "_hit": h,
                         }
                         for h in table_source
                         if h.get("content_type") == "table"
@@ -228,6 +241,7 @@ class RagService:
                         answer = compose_answer(facts, message)
                         measure = measure_from_facts(facts)
                         relevant = True
+                        answer_hits = [_hit_of(facts["block"], context_blocks, llm_hits)]
                     else:
                         answer = _NO_DIRECT_ANSWER
                     llm_out = ""
@@ -294,7 +308,7 @@ class RagService:
         sources = []
         if relevant:
             seen = set()
-            for h in hits:
+            for h in [x for x in answer_hits if x] + hits:
                 src = _source_from_hit(h)
                 key = (src.get("filename"), src["page"], src.get("section"))
                 if key in seen:
