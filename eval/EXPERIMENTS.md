@@ -18,3 +18,4 @@
 | 2026-11-12 | Latin letter rules (ii→ий, vowel+i→й), эгнээ synonym, answer-type check (зай fixed), number words; q22/q23 added. Reverted: хурд rule change and хурдны авто зам synonym (both lost Table 3.2 for q01/q17) | 17 ✓ / 2 ~ / 4 ✗ (of 23) | yes | q01-q21 same as 1208, q22 now ✓ |
 | 2026-11-12 | Table-only search for the lookup (+ grader fix: dash before a number no longer glued, so 'case — value' lists are graded right) | 18 ✓ / 2 ~ / 3 ✗ (of 23) | yes | q04 was always right, old grader hid list values |
 | 2026-11-12 | Off-topic reply when router says unknown and RAG finds no answer; more road words in router (машин, цэнэгл, станц…) | 19 ✓ / 1 ~ / 3 ✗ (of 23) | yes | q21 fixed; q20 kept honest |
+| 2026-11-12 | Class names not used in the book (II ангилал, 3-р ангилал…): answer without them + note with the book's Зэрэг 1–3 | 20 ✓ / 1 ~ / 2 ✗ (of 23) | yes | q05 fixed without guessing a mapping |

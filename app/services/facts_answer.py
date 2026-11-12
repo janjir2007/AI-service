@@ -600,3 +600,28 @@ def answer_type_ok(message: str, value: str, unit: str) -> bool:
     if kind == "length":
         return u in _LENGTH_UNITS
     return u in _SPEED_UNITS
+
+
+# ---- Class names the book does not use ("II ангилал") -------------------------------------------
+
+_CLASS_TERM = re.compile(
+    r"(?:^|(?<=\s))(?P<num>I{1,3}|IV|V|[1-5])\s*-?\s*(?:р|дугаар|дүгээр)?\s+"
+    r"(?:ангилал|ангиллын|ангилалд|ангиллыг|ангиллаар|категори\w*)",
+    re.IGNORECASE,
+)
+BOOK_CLASSES = (
+    "Номд замыг Зэрэг 1 (Төв зам), Зэрэг 2 (Хуримтлуулагч зам), "
+    "Зэрэг 3 (Хөдөө, орон нутгийн зам) гэж ангилдаг (БНбД, х. 16)."
+)
+
+
+def unknown_class_term(message: str) -> tuple[str, str]:
+    """'II ангиллын замын …' -> ('Замын …', note). The book only uses Зэрэг 1-3, so we don't guess a mapping."""
+    m = _CLASS_TERM.search(message or "")
+    if not m:
+        return message, ""
+    rest = _SPACE.sub(" ", (message[: m.start()] + " " + message[m.end():])).strip(" ,")
+    if rest:
+        rest = rest[0].upper() + rest[1:]
+    note = f"Номд «{m.group('num').upper()} ангилал» гэсэн ангилал байхгүй. {BOOK_CLASSES}"
+    return rest, note

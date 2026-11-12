@@ -14,6 +14,7 @@ from app.services.facts_answer import (
     answer_type_ok,
     measure_from_facts,
     table_lookup,
+    unknown_class_term,
     validate_facts,
     validate_overview,
 )
@@ -143,6 +144,7 @@ class RagService:
         use_llm = _llm_chat_enabled(provider, self.settings.chat_use_llm)
 
         answer = ""
+        class_note = ""
         if use_llm:
             context_blocks = []
             # Only the top chunks go to the LLM; the first (lead) chunk gets a bigger budget.
@@ -168,6 +170,8 @@ class RagService:
                     order = exact_match_order(message, context_blocks)
                     context_blocks = [context_blocks[i] for i in order]
                     llm_hits = [llm_hits[i] for i in order]
+                    # A class name the book doesn't use: answer without it, explain the book's classes.
+                    message, class_note = unknown_class_term(message)
                 if self.settings.answer_mode == "facts" and is_overview_question(message):
                     raw_points = self.llm.chat_overview(message, context_blocks)
                     logger.info("LLM overview: %s", raw_points)
@@ -243,6 +247,8 @@ class RagService:
                             answer = _NO_DIRECT_ANSWER
             except Exception as exc:
                 logger.warning("LLM chat failed, falling back to extractive: %s", exc)
+            if class_note and answer:
+                answer = class_note + "\n\n" + answer
 
         if labor_text and (not answer or answer == _NO_DIRECT_ANSWER or not re.search(r"хүн\s*цаг", answer, re.I)):
             answer = labor_text
