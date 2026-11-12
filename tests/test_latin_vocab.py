@@ -21,3 +21,9 @@ def test_unknown_word_left_alone():
 
 def test_cyrillic_untouched():
     assert latin_to_cyrillic("ерунхий") == "ерунхий"
+
+
+def test_soft_sign_fixed_by_book_vocabulary():
+    assert latin_to_cyrillic("haritsaa") == "харьцаа"
+    assert latin_to_cyrillic("barij") == "барьж"
+    assert latin_to_cyrillic("baigali") == "байгаль"

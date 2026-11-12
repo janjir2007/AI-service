@@ -144,7 +144,7 @@ def _word_to_cyrillic(token: str) -> str:
 # built by scripts/build_vocab.py). Missing file = no correction.
 
 _VOCAB_PATH = Path(__file__).resolve().parents[2] / "data" / "vocab.json"
-_SWAPS = {"у": "уүө", "о": "оө", "э": "эе"}
+_SWAPS = {"у": "уүө", "о": "оө", "э": "эе", "и": "иь"}  # Latin "i" can be ь
 _ENDINGS = [("ийн", "ын"), ("ын", "ийн"), ("ийг", "ыг"), ("ыг", "ийг"), ("ий", "ы"), ("ы", "ий")]
 _MAX_VARIANTS = 3000
 
