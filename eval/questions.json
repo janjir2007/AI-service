@@ -354,5 +354,74 @@
       40
     ],
     "reference": "Same as q22, Latin with everyday word эгнээ"
+  },
+  {
+    "id": "t01",
+    "type": "topic_section",
+    "question": "хөвөө",
+    "must_contain": [
+      [
+        "хөвөө гэдэг нь"
+      ],
+      [
+        "хэсэг 3.3"
+      ]
+    ],
+    "pages": [
+      139
+    ],
+    "reference": "Хэсэг 3.3 Хөвөө (+3.3.1, 3.3.2), х. 139–144; тодорхойлолт х. 139"
+  },
+  {
+    "id": "t02",
+    "type": "topic_scattered",
+    "question": "yavgan huni zam",
+    "must_contain": [
+      [
+        "явган зорчигчдод зориулсан"
+      ],
+      [
+        "9.3.8"
+      ]
+    ],
+    "pages": [
+      574
+    ],
+    "reference": "Нэр томьёо х. 574 (SIDEWALK); тусдаа бүлэггүй, 9.3.8 х. 449–450 г.м."
+  },
+  {
+    "id": "t03",
+    "type": "topic_section",
+    "question": "хөвөөний талаар мэдээлэл өгөөч",
+    "must_contain": [
+      [
+        "хөвөө гэдэг нь"
+      ],
+      [
+        "хэсэг 3.3"
+      ]
+    ],
+    "pages": [
+      139
+    ],
+    "reference": "t01-тэй ижил, талаар/мэдээлэл хэлбэрээр"
+  },
+  {
+    "id": "t04",
+    "type": "topic_section",
+    "question": "үзэгдэх зай",
+    "must_contain": [
+      [
+        "өмнө нь үзэгдэж байгаа зай"
+      ],
+      [
+        "хэсэг 2.2"
+      ]
+    ],
+    "pages": [
+      91,
+      574
+    ],
+    "reference": "Хэсэг 2.2 (+2.2.x), х. 91–100; тодорхойлолт Нэр томьёо х. 574 (SIGHT DISTANCE)"
   }
 ]
