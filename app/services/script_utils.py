@@ -9,7 +9,11 @@ This is a rule-based first version (word dictionary + letter rules). A trained n
 """
 from __future__ import annotations
 
+import json
 import re
+from functools import lru_cache
+from itertools import product
+from pathlib import Path
 
 _CYR = re.compile(r"[\u0400-\u04FF]")
 _LAT = re.compile(r"[A-Za-z]")
@@ -130,7 +134,56 @@ def _word_to_cyrillic(token: str) -> str:
             _letters_to_cyrillic(part) if _LAT.search(part) else part
             for part in re.findall(r"[A-Za-z]+|[^A-Za-z]+", token)
         )
-    return _letters_to_cyrillic(token)
+    return _vocab_fix(_letters_to_cyrillic(token))
+
+
+
+# ---- Correction against the book's vocabulary ------------------------------------------------
+# Latin "u" can be у/ү/ө, "o" can be о/ө ... Letter rules pick one; if that word is not in the
+# books, try the other readings and keep the one the books use most (data/vocab.json,
+# built by scripts/build_vocab.py). Missing file = no correction.
+
+_VOCAB_PATH = Path(__file__).resolve().parents[2] / "data" / "vocab.json"
+_SWAPS = {"у": "уүө", "о": "оө", "э": "эе"}
+_ENDINGS = [("ийн", "ын"), ("ын", "ийн"), ("ийг", "ыг"), ("ыг", "ийг"), ("ий", "ы"), ("ы", "ий")]
+_MAX_VARIANTS = 3000
+
+
+@lru_cache(maxsize=1)
+def _vocab() -> dict:
+    try:
+        return json.loads(_VOCAB_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
+def _variants(word: str):
+    bases = [word] + [word[: -len(a)] + b for a, b in _ENDINGS if word.endswith(a) and len(word) > len(a) + 1]
+    for base in bases:
+        slots = [_SWAPS.get(ch, ch) for ch in base]
+        total = 1
+        for s in slots:
+            total *= len(s)
+        if total > _MAX_VARIANTS:
+            yield base
+            continue
+        for combo in product(*slots):
+            yield "".join(combo)
+
+
+def _vocab_fix(word: str) -> str:
+    vocab = _vocab()
+    low = word.lower()
+    if not vocab or len(low) < 2 or low in vocab:
+        return word
+    best = max((v for v in _variants(low) if v in vocab), key=lambda v: vocab[v], default=None)
+    if best is None:
+        return word
+    if word.isupper() and len(word) > 1:
+        return best.upper()
+    if word[:1].isupper():
+        return best[:1].upper() + best[1:]
+    return best
 
 
 def latin_to_cyrillic(text: str) -> str:
